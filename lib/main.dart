@@ -1,122 +1,270 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'app/theme.dart';
+import 'l10n/app_localizations.dart';
+import 'services/prefs.dart';
+import 'features/onboarding/language_screen.dart';
+import 'features/onboarding/age_screen.dart';
+import 'features/prayer/prayer_screen.dart';
+import 'features/readings/reading_screen.dart';
+import 'features/confession/confession_screen.dart';
+import 'services/notifications_service.dart';
+import 'services/cache.dart';
+import 'app/root_scaffold.dart';
+import 'services/firebase_boot.dart';
+import 'features/settings/settings_screen.dart';
+import 'features/feedback/feedback_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppPrefs.init();
+  await NotificationsService.init();
+  await CacheService.init();
+  runApp(const RootedPathApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseBoot.init();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RootedPathApp extends StatefulWidget {
+  const RootedPathApp({super.key});
+  @override
+  State<RootedPathApp> createState() => _RootedPathAppState();
+}
 
-  // This widget is the root of your application.
+class _RootedPathAppState extends State<RootedPathApp> {
+  late Locale _uiLocale;       // en | am for Material/Cupertino
+  late Locale _contentLocale;  // en | am | ti | om for our strings
+  bool _onboarded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentLocale = Locale(AppPrefs.contentLangCode);
+    final ui = AppPrefs.uiLangCode;
+    _uiLocale = (ui == 'am' || ui == 'en') ? Locale(ui) : const Locale('en');
+    _onboarded = AppPrefs.isOnboarded;
+  }
+
+  Future<void> _applyLanguageUnified(String code) async {
+    // Always set content language
+    await AppPrefs.setContentLangCode(code);
+
+    // UI chrome must stay en/am to avoid delegate issues
+    if (code == 'en' || code == 'am') {
+      await AppPrefs.setUiLangCode(code);
+      setState(() {
+        _uiLocale = Locale(code);
+        _contentLocale = Locale(code);
+      });
+    } else {
+      await AppPrefs.setUiLangCode('en');
+      setState(() {
+        _uiLocale = const Locale('en');
+        _contentLocale = Locale(code); // ti / om
+      });
+    }
+  }
+
+  Future<void> _finishOnboarding(String age) async {
+    await AppPrefs.setAgeGroup(age);
+    await AppPrefs.setOnboarded(true);
+    setState(() => _onboarded = true);
+  }
+
+  // Launch the wizard (can be used at first run or later from settings)
+  Future<void> _startWizard(BuildContext context) async {
+    // Step 1: Language
+    final lang = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => LanguageScreen(initial: AppPrefs.contentLangCode)),
+    );
+    if (lang == null) return; // cancelled
+    await _applyLanguageUnified(lang);
+
+    // Step 2: Age
+    final age = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => AgeScreen(
+          initial: AppPrefs.ageGroup,
+          contentLocale: Locale(lang),   // 👈 pass the selected language here
+        ),
+      ),
+    );
+    if (age == null) return; // cancelled
+    await _finishOnboarding(age);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      debugShowCheckedModeBanner: false,
+      locale: _uiLocale,
+      onGenerateTitle: (ctx) => AppLocalizations.of(ctx)!.appTitle,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en'), Locale('am')],
+      theme: appTheme(),
+      home: _onboarded
+          ? RootScaffold(
+        contentLocale: _contentLocale,
+        onOpenWizard: _startWizard,
+      )
+          : _Welcome(
+        onStart: _startWizard,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+/// Welcome screen: logo + verse + "Get started"
+class _Welcome extends StatelessWidget {
+  final Future<void> Function(BuildContext) onStart;
+  const _Welcome({required this.onStart});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final t = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // App "logo" placeholder — replace with your asset later
+                  const FlutterLogo(size: 96),
+                  const SizedBox(height: 24),
+                  Text(
+                    t.appTitle,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  // KJV public-domain verse (safe)
+                  Text(
+                    '“Thy word is a lamp unto my feet, and a light unto my path.”\n— Psalm 119:105',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 32),
+                  FilledButton(
+                    onPressed: () => onStart(context),
+                    child: Text(t.next), // "Get started"
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+/// Home: minimal shell; opens wizard from gear
+// in lib/main.dart
+
+class _Home extends StatelessWidget {
+  final Locale contentLocale;
+  final Future<void> Function(BuildContext) onOpenWizard;
+  const _Home({required this.contentLocale, required this.onOpenWizard});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<AppLocalizations>(
+      key: ValueKey('home-${contentLocale.languageCode}'),
+      future: AppLocalizations.delegate.load(contentLocale),
+      builder: (context, snap) {
+        final t = snap.data;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(t?.appTitle ?? '...'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: t?.chooseLanguage ?? 'Language',
+                onPressed: () => onOpenWizard(context),
+              ),
+            ],
+          ),
+          body: !snap.hasData
+              ? const Center(child: CircularProgressIndicator())
+              : Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ReadingScreen(contentLocale: contentLocale),
+                        ),
+                      ),
+                      child: Text(t!.dailyReading),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonal(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ConfessionScreen(contentLocale: contentLocale),
+                        ),
+                      ),
+                      child: Text(t.confessionPlanner),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 360,
+                    child: FilledButton.tonal(
+                      onPressed: () async {
+                        // Web fallback: show a toast/snack
+                        try {
+                          await NotificationsService.scheduleDailyReading();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Daily reminder scheduled for 7:00 AM')),
+                          );
+                        } catch (_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Reminders supported on Android/iOS')),
+                          );
+                        }
+                      },
+                      child: const Text('Enable daily reminder'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () async {
+                      try {
+                        await NotificationsService.scheduleTestInSeconds(5);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Test notification in 5s…')),
+                        );
+                      } catch (_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Test works on Android/iOS')),
+                        );
+                      }
+                    },
+                    child: const Text('Send test now'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

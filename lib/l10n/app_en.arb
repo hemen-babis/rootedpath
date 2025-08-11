@@ -1,0 +1,57 @@
+{
+  "appTitle": "rootedpath",
+  "hello": "Hello from localization!",
+  "chooseLanguage": "Choose language",
+  "next": "Next",
+  "ageGroup": "Age group",
+  "children": "Children",
+  "youth": "Youth",
+  "adult": "Adult",
+
+  "prayerCorner": "Prayer Corner",
+  "morningPrayerTitle": "Morning Prayer",
+  "morningPrayerBody": "Lord, let me begin this day in peace, with a humble heart and a steadfast mind. Guide my steps and guard my path. Amen.",
+
+  "dailyReading": "Daily Reading",
+  "confessionPlanner": "Confession Planner",
+  "writeNotes": "Write your confession notes",
+  "save": "Save",
+  "saved": "Saved",
+  "privacyNote": "Your notes are stored only on this device.",
+
+  "navHome": "Home",
+  "navPrayer": "Prayer",
+  "navEvents": "Events",
+  "events": "Events",
+  "addToCalendar": "Add to calendar",
+  "eventOpenedCalendar": "Opened in Calendar",
+  "eventWebNotSupported": "Calendar adding is not supported on web",
+  "eventAddFailed": "Could not add to calendar",
+
+  "settings": "Settings",
+  "languageAndAge": "Language & Age",
+  "changeLanguageAgeHint": "Open the setup wizard",
+  "dailyReminder": "Daily reminder",
+  "atTime": "At",
+  "changeReminderTime": "Change reminder time",
+  "clearOfflineCache": "Clear offline cache",
+
+  "feedback": "Feedback",
+  "feedbackHint": "Write your feedback here",
+  "submitted": "Submitted",
+  "submit": "Submit",
+
+  "nearestChurch": "Nearest Church",
+  "languages": "Languages",
+  "filterByLanguage": "Filter:",
+  "openInMaps": "Open in Maps",
+  "call": "Call",
+
+  "confessionPlanner": "Confession Planner",
+  "confessionHint": "Private notes to prepare for confession. Saved securely on your device.",
+  "writeHere": "Write here…",
+  "clear": "Clear",
+  "areYouSure": "Are you sure? This cannot be undone.",
+  "cancel": "Cancel",
+  "cleared": "Cleared"
+}
