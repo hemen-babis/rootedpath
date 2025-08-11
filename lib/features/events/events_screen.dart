@@ -84,7 +84,12 @@ class _EventsScreenState extends State<EventsScreen> {
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: _openQuickAdd,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => AddEventScreen()),
+              );
+            },
             child: const Icon(Icons.add),
           ),
           body: !snap.hasData
