@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:add_2_calendar/add_2_calendar.dart' as add2cal;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_event_screen.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // you already have this
 import '../../l10n/app_localizations.dart';
 import '../../data/models/event.dart';
 import '../../data/repositories/events_repo.dart';
@@ -20,10 +20,30 @@ class _EventsScreenState extends State<EventsScreen> {
   late Future<List<EventModel>> _future;
   String _status = '…';
 
+  // 👇 admin state + getter live HERE (inside the State class)
+  User? _user;
+  bool _isAdmin = false;
+  bool get isAdmin => _isAdmin;
+
   @override
   void initState() {
     super.initState();
     _future = _load();
+    _checkAdmin(); // 👈 populate _isAdmin on startup
+  }
+
+  Future<void> _checkAdmin() async {
+    _user = FirebaseAuth.instance.currentUser;
+    if (_user == null) {
+      setState(() => _isAdmin = false);
+      return;
+    }
+    final doc = await FirebaseFirestore.instance
+        .collection('admins')
+        .doc(_user!.uid)
+        .get();
+    if (!mounted) return;
+    setState(() => _isAdmin = doc.exists);
   }
 
   Future<List<EventModel>> _load() async {
@@ -84,16 +104,15 @@ class _EventsScreenState extends State<EventsScreen> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              final saved = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (_) => const AddEventScreen()),
-              );
-              if (saved == true) _refresh();
-            },
-            child: const Icon(Icons.add),
-          ),
+
+            floatingActionButton: isAdmin
+                ? FloatingActionButton(
+              onPressed: _openQuickAdd, // or push AddEventScreen
+              child: const Icon(Icons.add),
+            )
+                : null,
+
+            : null,
           body: !snap.hasData
               ? const Center(child: CircularProgressIndicator())
               : FutureBuilder<List<EventModel>>(
