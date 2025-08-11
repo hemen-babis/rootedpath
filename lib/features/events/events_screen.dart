@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:add_2_calendar/add_2_calendar.dart' as add2cal;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'add_event_screen.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../data/models/event.dart';
