@@ -43,7 +43,7 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = _load());
+    setState(() { _future = _load(); });
     await _future;
   }
 
@@ -85,11 +85,12 @@ class _EventsScreenState extends State<EventsScreen> {
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final saved = await Navigator.push<bool>(
                 context,
-                MaterialPageRoute(builder: (_) => AddEventScreen()),
+                MaterialPageRoute(builder: (_) => const AddEventScreen()),
               );
+              if (saved == true) _refresh();
             },
             child: const Icon(Icons.add),
           ),
