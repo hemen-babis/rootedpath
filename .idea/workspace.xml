@@ -10,54 +10,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c467c25b-4a81-4ab9-bc27-8e242d295c50" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/assets/fonts/AbyssinicaSIL-Regular.ttf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/l10n.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/app/root_scaffold.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/app/theme.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/data/models/church.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/data/models/event.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/data/repositories/churches_repo.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/data/repositories/events_repo.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/data/repositories/readings_repo.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/churches/churches_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/confession/confession_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/events/events_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/feedback/feedback_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/onboarding/age_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/onboarding/language_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/onboarding/onboarding_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/prayer/prayer_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/readings/reading_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/features/settings/settings_screen.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/l10n/app_am.arb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/l10n/app_om.arb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/l10n/app_ti.arb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/services/cache.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/services/confession_store.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/services/firebase_boot.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/services/notifications_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/services/prefs.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/android/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Flutter/Debug.xcconfig" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Flutter/Debug.xcconfig" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Flutter/Release.xcconfig" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Flutter/Release.xcconfig" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Runner.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Runner.xcodeproj/project.pbxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Runner.xcworkspace/contents.xcworkspacedata" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Runner.xcworkspace/contents.xcworkspacedata" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/Flutter-Debug.xcconfig" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/Flutter-Debug.xcconfig" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/Flutter-Release.xcconfig" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/Flutter-Release.xcconfig" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Runner.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Runner.xcodeproj/project.pbxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Runner.xcworkspace/contents.xcworkspacedata" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Runner.xcworkspace/contents.xcworkspacedata" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rootedpath.iml" beforeDir="false" afterPath="$PROJECT_DIR$/rootedpath.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/features/events/events_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/features/events/events_screen.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

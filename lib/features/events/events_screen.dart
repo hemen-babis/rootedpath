@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:add_2_calendar/add_2_calendar.dart' as add2cal;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 import '../../l10n/app_localizations.dart';
 import '../../data/models/event.dart';
 import '../../data/repositories/events_repo.dart';
@@ -32,7 +31,6 @@ class _EventsScreenState extends State<EventsScreen> {
       final list = await FirestoreEventsRepo().listUpcoming();
       setState(() => _status = 'Loaded ${list.length} from Firestore');
       if (list.isNotEmpty) return list;
-      // no docs matched the query
       setState(() => _status = 'No upcoming events (Firestore empty)');
       return const <EventModel>[];
     } catch (e) {
@@ -43,34 +41,29 @@ class _EventsScreenState extends State<EventsScreen> {
     }
   }
 
-  Future<void> _debugCheck() async {
-    final app = FirebaseFirestore.instance.app;
-    final pid = app.options.projectId;
-    try {
-      // TODO: replace with an actual doc ID from your screenshot
-      const testId = '5eSSFBLYD5sYTmmueQ0o';
-      final snap = await FirebaseFirestore.instance.collection('events').doc(testId).get();
-      final ok = snap.exists ? 'exists, title=${snap.data()?['title']}' : 'NOT FOUND';
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Project: $pid • events/$testId $ok')),
-      );
-      // also print to console
-      // ignore: avoid_print
-      print('DEBUG Firestore -> project: $pid • events/$testId $ok');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Project: $pid • error: $e')),
-      );
-      // ignore: avoid_print
-      print('DEBUG Firestore error: $e');
-    }
-  }
-
   Future<void> _refresh() async {
     setState(() => _future = _load());
     await _future;
+  }
+
+  Future<void> _openQuickAdd() async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: const _QuickAddEventSheet(),
+      ),
+    );
+    if (saved == true) {
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Event saved')));
+    }
   }
 
   @override
@@ -90,6 +83,10 @@ class _EventsScreenState extends State<EventsScreen> {
               ),
             ],
           ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _openQuickAdd,
+            child: const Icon(Icons.add),
+          ),
           body: !snap.hasData
               ? const Center(child: CircularProgressIndicator())
               : FutureBuilder<List<EventModel>>(
@@ -102,14 +99,15 @@ class _EventsScreenState extends State<EventsScreen> {
               final events = ev.data ?? const <EventModel>[];
 
               if (events.isEmpty) {
-                // Friendly empty state + quick checklist
                 return Padding(
                   padding: const EdgeInsets.all(24),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(t!.events, style: Theme.of(context).textTheme.titleMedium),
+                        Text(t!.events,
+                            style:
+                            Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 12),
                         Text(
                           _status,
@@ -117,7 +115,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 16),
-                        _HelpCard(),
+                        const _HelpCard(),
                         const SizedBox(height: 12),
                         FilledButton.tonal(
                           onPressed: _refresh,
@@ -140,7 +138,9 @@ class _EventsScreenState extends State<EventsScreen> {
                     return Card(
                       child: ListTile(
                         title: Text(e.title),
-                        subtitle: Text('${formatEventWindow(e.start, e.end)}\n${e.location}'),
+                        subtitle: Text(
+                          '${formatEventWindow(e.start, e.end)}\n${e.location}',
+                        ),
                         isThreeLine: true,
                         trailing: FilledButton(
                           onPressed: () async {
@@ -154,10 +154,15 @@ class _EventsScreenState extends State<EventsScreen> {
                               );
                               await add2cal.Add2Calendar.addEvent2Cal(evt);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(t!.eventOpenedCalendar)),
+                                SnackBar(
+                                  content:
+                                  Text(t!.eventOpenedCalendar),
+                                ),
                               );
                             } catch (_) {
-                              final msg = kIsWeb ? t!.eventWebNotSupported : t!.eventAddFailed;
+                              final msg = kIsWeb
+                                  ? t!.eventWebNotSupported
+                                  : t!.eventAddFailed;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text(msg)),
                               );
@@ -179,6 +184,8 @@ class _EventsScreenState extends State<EventsScreen> {
 }
 
 class _HelpCard extends StatelessWidget {
+  const _HelpCard();
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -193,6 +200,155 @@ class _HelpCard extends StatelessWidget {
             Text('• Fields: start, end (timestamp)', textAlign: TextAlign.center),
             Text('• start must be today or future', textAlign: TextAlign.center),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom-sheet quick add form
+class _QuickAddEventSheet extends StatefulWidget {
+  const _QuickAddEventSheet();
+
+  @override
+  State<_QuickAddEventSheet> createState() => _QuickAddEventSheetState();
+}
+
+class _QuickAddEventSheetState extends State<_QuickAddEventSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _title = TextEditingController();
+  final _desc = TextEditingController();
+  final _location = TextEditingController();
+  DateTime? _start = DateTime.now().add(const Duration(hours: 1));
+  DateTime? _end = DateTime.now().add(const Duration(hours: 2));
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _desc.dispose();
+    _location.dispose();
+    super.dispose();
+  }
+
+  Future<DateTime?> _pickDateTime(DateTime? initial) async {
+    final base = initial ?? DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: base,
+      firstDate: DateTime(DateTime.now().year - 1),
+      lastDate: DateTime(DateTime.now().year + 2),
+    );
+    if (date == null) return null;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(base),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_start == null || _end == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pick start/end')),
+      );
+      return;
+    }
+    if (!_end!.isAfter(_start!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End must be after start')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await FirebaseFirestore.instance.collection('events').add({
+        'title': _title.text.trim(),
+        'description': _desc.text.trim(),
+        'location': _location.text.trim(),
+        'start': Timestamp.fromDate(_start!),
+        'end': Timestamp.fromDate(_end!),
+      });
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Save failed: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final insets = MediaQuery.of(context).viewInsets;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + insets.bottom),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('New event', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _title,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _desc,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _location,
+                decoration: const InputDecoration(labelText: 'Location'),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Start'),
+                subtitle: Text(_start == null ? 'Select…' : _start!.toString()),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final dt = await _pickDateTime(_start);
+                    if (dt != null) setState(() => _start = dt);
+                  },
+                ),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('End'),
+                subtitle: Text(_end == null ? 'Select…' : _end!.toString()),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final dt = await _pickDateTime(_end);
+                    if (dt != null) setState(() => _end = dt);
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                      height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Save'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
