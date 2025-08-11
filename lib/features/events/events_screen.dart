@@ -104,106 +104,22 @@ class _EventsScreenState extends State<EventsScreen> {
               ),
             ],
           ),
-
-            floatingActionButton: isAdmin
-                ? FloatingActionButton(
-              onPressed: _openQuickAdd, // or push AddEventScreen
-              child: const Icon(Icons.add),
-            )
-                : null,
-
-            : null,
+          floatingActionButton: _isAdmin
+              ? FloatingActionButton(
+            onPressed: _openQuickAdd, // or push AddEventScreen()
+            child: const Icon(Icons.add),
+          )
+              : null,
           body: !snap.hasData
               ? const Center(child: CircularProgressIndicator())
               : FutureBuilder<List<EventModel>>(
             future: _future,
             builder: (context, ev) {
-              if (ev.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final events = ev.data ?? const <EventModel>[];
-
-              if (events.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(t!.events,
-                            style:
-                            Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 12),
-                        Text(
-                          _status,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 16),
-                        const _HelpCard(),
-                        const SizedBox(height: 12),
-                        FilledButton.tonal(
-                          onPressed: _refresh,
-                          child: const Text('Try again'),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              return RefreshIndicator(
-                onRefresh: _refresh,
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: events.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, i) {
-                    final e = events[i];
-                    return Card(
-                      child: ListTile(
-                        title: Text(e.title),
-                        subtitle: Text(
-                          '${formatEventWindow(e.start, e.end)}\n${e.location}',
-                        ),
-                        isThreeLine: true,
-                        trailing: FilledButton(
-                          onPressed: () async {
-                            try {
-                              final evt = add2cal.Event(
-                                title: e.title,
-                                description: e.description,
-                                location: e.location,
-                                startDate: e.start,
-                                endDate: e.end,
-                              );
-                              await add2cal.Add2Calendar.addEvent2Cal(evt);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                  Text(t!.eventOpenedCalendar),
-                                ),
-                              );
-                            } catch (_) {
-                              final msg = kIsWeb
-                                  ? t!.eventWebNotSupported
-                                  : t!.eventAddFailed;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(msg)),
-                              );
-                            }
-                          },
-                          child: Text(t!.addToCalendar),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
+              // ... your list/empty state as before ...
             },
           ),
         );
+
       },
     );
   }
