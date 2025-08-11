@@ -251,6 +251,7 @@ class _QuickAddEventSheetState extends State<_QuickAddEventSheet> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(base),
     );
+
     if (time == null) return null;
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
