@@ -1,0 +1,7 @@
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.flutter-plugins*
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
