@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'app/theme.dart';
+
+import 'theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
+
 import 'services/prefs.dart';
+import 'services/cache.dart';
+import 'services/notifications_service.dart';
+import 'services/firebase_boot.dart';
+
+import 'app/root_scaffold.dart';
 import 'features/onboarding/language_screen.dart';
 import 'features/onboarding/age_screen.dart';
-import 'features/prayer/prayer_screen.dart';
-import 'features/readings/reading_screen.dart';
-import 'features/confession/confession_screen.dart';
-import 'services/notifications_service.dart';
-import 'services/cache.dart';
-import 'app/root_scaffold.dart';
-import 'services/firebase_boot.dart';
-import 'features/settings/settings_screen.dart';
-import 'features/feedback/feedback_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppPrefs.init();
-  await NotificationsService.init();
   await CacheService.init();
+  try {
+    await FirebaseBoot.init();
+  } catch (_) {}
+  try {
+    await NotificationsService.init();
+  } catch (_) {}
   runApp(const RootedPathApp());
-  WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseBoot.init();
 }
 
 class RootedPathApp extends StatefulWidget {
@@ -32,16 +33,21 @@ class RootedPathApp extends StatefulWidget {
 }
 
 class _RootedPathAppState extends State<RootedPathApp> {
-  late Locale _uiLocale;       // en | am for Material/Cupertino
-  late Locale _contentLocale;  // en | am | ti | om for our strings
+  late Locale _uiLocale;       // en | am (Material/Cupertino chrome)
+  late Locale _contentLocale;  // en | am | ti | om (our content)
   bool _onboarded = false;
 
   @override
   void initState() {
     super.initState();
-    _contentLocale = Locale(AppPrefs.contentLangCode);
+    final content = (AppPrefs.contentLangCode.isNotEmpty)
+        ? AppPrefs.contentLangCode
+        : 'en';
+    _contentLocale = Locale(content);
+
     final ui = AppPrefs.uiLangCode;
     _uiLocale = (ui == 'am' || ui == 'en') ? Locale(ui) : const Locale('en');
+
     _onboarded = AppPrefs.isOnboarded;
   }
 
@@ -49,7 +55,7 @@ class _RootedPathAppState extends State<RootedPathApp> {
     // Always set content language
     await AppPrefs.setContentLangCode(code);
 
-    // UI chrome must stay en/am to avoid delegate issues
+    // UI chrome must stay en/am to avoid missing delegates
     if (code == 'en' || code == 'am') {
       await AppPrefs.setUiLangCode(code);
       setState(() {
@@ -60,7 +66,7 @@ class _RootedPathAppState extends State<RootedPathApp> {
       await AppPrefs.setUiLangCode('en');
       setState(() {
         _uiLocale = const Locale('en');
-        _contentLocale = Locale(code); // ti / om
+        _contentLocale = Locale(code); // 'ti' or 'om'
       });
     }
   }
@@ -71,7 +77,7 @@ class _RootedPathAppState extends State<RootedPathApp> {
     setState(() => _onboarded = true);
   }
 
-  // Launch the wizard (can be used at first run or later from settings)
+  /// Two-step wizard: language -> age
   Future<void> _startWizard(BuildContext context) async {
     // Step 1: Language
     final lang = await Navigator.of(context).push<String>(
@@ -85,7 +91,7 @@ class _RootedPathAppState extends State<RootedPathApp> {
       MaterialPageRoute(
         builder: (_) => AgeScreen(
           initial: AppPrefs.ageGroup,
-          contentLocale: Locale(lang),   // 👈 pass the selected language here
+          contentLocale: Locale(lang),
         ),
       ),
     );
@@ -97,24 +103,29 @@ class _RootedPathAppState extends State<RootedPathApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
+      // UI chrome (Material/Cupertino) locale
       locale: _uiLocale,
-      onGenerateTitle: (ctx) => AppLocalizations.of(ctx)!.appTitle,
+      supportedLocales: const [Locale('en'), Locale('am')],
       localizationsDelegates: const [
-        AppLocalizations.delegate,
+        AppLocalizations.delegate, // your app content
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('en'), Locale('am')],
-      theme: appTheme(),
+      onGenerateTitle: (ctx) => AppLocalizations.of(ctx)?.appTitle ?? 'rootedpath',
+
+      // Theming based on content locale (so Ethiopic fonts apply)
+      theme: AppTheme.light(_contentLocale),
+      darkTheme: AppTheme.dark(_contentLocale),
+
+      // Home
       home: _onboarded
           ? RootScaffold(
         contentLocale: _contentLocale,
         onOpenWizard: _startWizard,
       )
-          : _Welcome(
-        onStart: _startWizard,
-      ),
+          : _Welcome(onStart: _startWizard),
     );
   }
 }
@@ -126,7 +137,7 @@ class _Welcome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context)!;
+    final t = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -137,15 +148,13 @@ class _Welcome extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // App "logo" placeholder — replace with your asset later
                   const FlutterLogo(size: 96),
                   const SizedBox(height: 24),
                   Text(
-                    t.appTitle,
+                    t?.appTitle ?? 'rootedpath',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 16),
-                  // KJV public-domain verse (safe)
                   Text(
                     '“Thy word is a lamp unto my feet, and a light unto my path.”\n— Psalm 119:105',
                     textAlign: TextAlign.center,
@@ -154,7 +163,7 @@ class _Welcome extends StatelessWidget {
                   const SizedBox(height: 32),
                   FilledButton(
                     onPressed: () => onStart(context),
-                    child: Text(t.next), // "Get started"
+                    child: Text(t?.next ?? 'Next'),
                   ),
                 ],
               ),
@@ -162,109 +171,6 @@ class _Welcome extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Home: minimal shell; opens wizard from gear
-// in lib/main.dart
-
-class _Home extends StatelessWidget {
-  final Locale contentLocale;
-  final Future<void> Function(BuildContext) onOpenWizard;
-  const _Home({required this.contentLocale, required this.onOpenWizard});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<AppLocalizations>(
-      key: ValueKey('home-${contentLocale.languageCode}'),
-      future: AppLocalizations.delegate.load(contentLocale),
-      builder: (context, snap) {
-        final t = snap.data;
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(t?.appTitle ?? '...'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                tooltip: t?.chooseLanguage ?? 'Language',
-                onPressed: () => onOpenWizard(context),
-              ),
-            ],
-          ),
-          body: !snap.hasData
-              ? const Center(child: CircularProgressIndicator())
-              : Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ReadingScreen(contentLocale: contentLocale),
-                        ),
-                      ),
-                      child: Text(t!.dailyReading),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.tonal(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ConfessionScreen(contentLocale: contentLocale),
-                        ),
-                      ),
-                      child: Text(t.confessionPlanner),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: 360,
-                    child: FilledButton.tonal(
-                      onPressed: () async {
-                        // Web fallback: show a toast/snack
-                        try {
-                          await NotificationsService.scheduleDailyReading();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Daily reminder scheduled for 7:00 AM')),
-                          );
-                        } catch (_) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Reminders supported on Android/iOS')),
-                          );
-                        }
-                      },
-                      child: const Text('Enable daily reminder'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () async {
-                      try {
-                        await NotificationsService.scheduleTestInSeconds(5);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Test notification in 5s…')),
-                        );
-                      } catch (_) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Test works on Android/iOS')),
-                        );
-                      }
-                    },
-                    child: const Text('Send test now'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
